@@ -4,26 +4,30 @@
 
 ## 依赖（首次安装）
 
-- Windows，已安装并授权 Origin/OriginPro 2021 或更新版本。本机已检测到 Origin 2026b。
-- 64 位 Python 3.11（本机已安装；其他受 OriginExt 支持的 Python 版本也可使用）。
+- Windows，已安装并授权 Origin/OriginPro 2021 或更新版本。
+- 64 位 Python 3.11（其他受 OriginExt 支持的 Python 版本也可使用）。
 - 项目依赖见 requirements.txt：originpro，安装时会带上 OriginExt。图形窗口使用 Python 标准库 tkinter，CSV 读取不需 pandas。
 
-在 PowerShell 7 中执行一次：
+将项目文件夹复制或解压到任意位置，在 PowerShell 7 中进入该文件夹并执行一次：
 
 ~~~powershell
-cd F:\Project\Origin_tool
+cd "你的 Origin_tool 文件夹路径"
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ~~~
 
 如果 py -3.11 不可用，可换成另一套 64 位且与 OriginExt wheel 兼容的 Python。虚拟环境装在本目录，不修改全局 Python。
 
+## 分享给其他人
+
+可以把此文件夹中的脚本、说明、配置、`requirements.txt` 和示例 CSV 打包为 ZIP；若使用 Git，可把仓库推送到你选择的平台，让对方克隆。`.venv`、`__pycache__` 和本地生成的工程/图片不必打包，对方按上面的步骤在自己的电脑上安装依赖。对方若只需查看已完成的图，直接发送生成的 `.opju`；若还需快速预览，可同时发送同名 `.png`。生成的工程已经包含选中的数据列。
+
 ## 日常使用
 
 双击 [start_gui.cmd](start_gui.cmd)，或在 PowerShell 7 中执行：
 
 ~~~powershell
-F:\Project\Origin_tool\.venv\Scripts\python.exe F:\Project\Origin_tool\origin_plot_gui.py
+.\.venv\Scripts\python.exe .\origin_plot_gui.py
 ~~~
 
 1. 点“选择文件…”，选择 CSV；若中文表头乱码，试把编码切换为 gb18030。
@@ -37,8 +41,8 @@ F:\Project\Origin_tool\.venv\Scripts\python.exe F:\Project\Origin_tool\origin_pl
 编辑 [plot_config.json](plot_config.json) 的文件路径与列名后运行：
 
 ~~~powershell
-F:\Project\Origin_tool\.venv\Scripts\python.exe F:\Project\Origin_tool\plot_dual_y_origin.py --check-only
-F:\Project\Origin_tool\.venv\Scripts\python.exe F:\Project\Origin_tool\plot_dual_y_origin.py
+.\.venv\Scripts\python.exe .\plot_dual_y_origin.py --check-only
+.\.venv\Scripts\python.exe .\plot_dual_y_origin.py
 ~~~
 
 第一次只检查 CSV 和选列，不启动 Origin；第二次在后台生成工程。已有目标文件时，命令行默认拒绝覆盖；明确要覆盖时加 --overwrite。路径可写成绝对路径，或相对于配置文件所在目录的路径。
