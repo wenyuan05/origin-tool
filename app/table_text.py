@@ -5,9 +5,27 @@ from itertools import chain
 from pathlib import Path
 
 
+METADATA_PREFIXES = ("Measurement Time:", "Device Area:")
+
+
+def read_metadata(path: Path, encoding="utf-8-sig"):
+    """Return recognized preamble lines without treating them as table rows."""
+    lines = []
+    with Path(path).open("r", encoding=encoding, newline="") as handle:
+        for line in handle:
+            if not line.lstrip().startswith(METADATA_PREFIXES):
+                break
+            lines.append(line.strip())
+    return lines
+
+
 def iter_table_rows(handle):
-    """Yield (physical line number, fields), detecting the first line's separator."""
+    """Yield (physical line number, fields), skipping known instrument metadata."""
+    offset = 0
     first_line = handle.readline()
+    while first_line and first_line.lstrip().startswith(METADATA_PREFIXES):
+        offset += 1
+        first_line = handle.readline()
     if not first_line:
         return
     delimiters = ("\t", ",", ";")
@@ -16,7 +34,7 @@ def iter_table_rows(handle):
     delimiter = delimiters[best] if field_counts[best] > 1 else None
     lines = chain((first_line,), handle)
     if delimiter is None:
-        for line_number, line in enumerate(lines, start=1):
+        for line_number, line in enumerate(lines, start=offset + 1):
             fields = line.split()
             if fields:
                 yield line_number, fields
@@ -24,7 +42,7 @@ def iter_table_rows(handle):
         reader = csv.reader(lines, delimiter=delimiter)
         for fields in reader:
             if fields:
-                yield reader.line_num, fields
+                yield offset + reader.line_num, fields
 
 
 def validate_headers(headers):

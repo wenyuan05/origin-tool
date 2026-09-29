@@ -1,0 +1,14 @@
+{
+  "data_files": [
+    "../examples/sample_spectrum_device_a.txt",
+    "../examples/sample_spectrum_device_b.txt"
+  ],
+  "encoding": "utf-8-sig",
+  "x": "Wavelength(nm)",
+  "left_y": ["Ip(uW/nm)-1v"],
+  "right_y": ["Ip(uW/nm)-2v"],
+  "plot_mode": "overlay",
+  "kind": "line",
+  "output_project": "../outputs/multi_spectrum.opju",
+  "export_png": false
+}

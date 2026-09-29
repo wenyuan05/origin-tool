@@ -1,0 +1,7 @@
+Measurement Time:2026-09-02, 11:00:00
+Device Area: 1mm^2, Integration Time: 30ms
+Wavelength(nm)	Ip(uW/nm)-1v	Ip(uW/nm)-2v	Unused
+650.5	0.08	0.17	X
+651.5	0.11	0.20	Y
+652.5	0.14	0.24	Z
+653.5	0.17	0.26	W

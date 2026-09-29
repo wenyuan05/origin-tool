@@ -11,7 +11,7 @@ TOOL_DIR = Path(__file__).resolve().parent
 if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
-from plot_dual_y_origin import load_config, read_selected, run_external
+from plot_dual_y_origin import load_config, read_sources, run_external
 from table_text import read_headers
 
 
@@ -19,7 +19,7 @@ class PlotPicker:
     def __init__(self, root):
         self.root = root
         self.root.title("CSV/TXT → Origin 工程")
-        self.root.geometry("840x650")
+        self.root.geometry("900x720")
         self.root.minsize(680, 500)
         self.result = None
         self.column_choices = {}
@@ -30,15 +30,16 @@ class PlotPicker:
         except (OSError, ValueError) as exc:
             messagebox.showerror("配置错误", str(exc), parent=root)
             default = {}
-        self.file_var = tk.StringVar(value=str(default.get("data_file", "")))
+        self.file_paths = [Path(path) for path in default.get("data_files", [])]
         self.output_var = tk.StringVar(value=str(default.get("output_project", "")))
         self.encoding_var = tk.StringVar(value=default.get("encoding", "utf-8-sig"))
         self.kind_var = tk.StringVar(value=default.get("kind", "line+symbol"))
+        self.mode_var = tk.StringVar(value="分别出图" if default.get("plot_mode") == "separate" else "叠加对比")
         self.export_png_var = tk.BooleanVar(value=default.get("export_png", False))
-        self.status_var = tk.StringVar(value="选择 CSV 或 TXT，再指定一个 X 列和至少一个 Y 列。")
+        self.status_var = tk.StringVar(value="添加一个或多个 CSV/TXT，再指定一个 X 列和至少一个 Y 列。")
 
         self._build_ui()
-        if self.file_var.get():
+        if self.file_paths:
             self.load_columns(default, show_error=False)
 
     def _build_ui(self):
@@ -46,14 +47,20 @@ class PlotPicker:
         outer.pack(fill="both", expand=True)
 
         ttk.Label(outer, text="CSV/TXT 数据生成 Origin 工程", font=("Microsoft YaHei UI", 15, "bold")).pack(anchor="w")
-        ttk.Label(outer, text="只画你选中的列；左右 Y 轴可各选 0 列或多列。", foreground="#555555").pack(anchor="w", pady=(3, 12))
+        ttk.Label(outer, text="多个文件共用选列；可以叠加比较，也可以每个文件单独出图。", foreground="#555555").pack(anchor="w", pady=(3, 12))
 
         file_row = ttk.Frame(outer)
         file_row.pack(fill="x", pady=3)
         ttk.Label(file_row, text="数据文件", width=10).pack(side="left")
-        ttk.Entry(file_row, textvariable=self.file_var).pack(side="left", fill="x", expand=True, padx=5)
-        ttk.Button(file_row, text="选择文件…", command=self.choose_file).pack(side="left", padx=(0, 5))
-        ttk.Button(file_row, text="读取列", command=self.load_columns).pack(side="left")
+        self.file_list = tk.Listbox(file_row, height=3, exportselection=False)
+        self.file_list.pack(side="left", fill="x", expand=True, padx=5)
+        for path in self.file_paths:
+            self.file_list.insert("end", str(path))
+        file_actions = ttk.Frame(file_row)
+        file_actions.pack(side="left")
+        ttk.Button(file_actions, text="添加文件…", command=self.choose_file).pack(fill="x")
+        ttk.Button(file_actions, text="移除选中", command=self.remove_file).pack(fill="x", pady=3)
+        ttk.Button(file_actions, text="读取列", command=self.load_columns).pack(fill="x")
 
         options = ttk.Frame(outer)
         options.pack(fill="x", pady=(8, 8))
@@ -66,6 +73,10 @@ class PlotPicker:
         kind = ttk.Combobox(options, textvariable=self.kind_var, width=17, state="readonly")
         kind["values"] = ("scatter", "line", "line+symbol")
         kind.pack(side="left", padx=5)
+        ttk.Label(options, text="多文件出图").pack(side="left", padx=(12, 0))
+        mode = ttk.Combobox(options, textvariable=self.mode_var, width=14, state="readonly")
+        mode["values"] = ("叠加对比", "分别出图")
+        mode.pack(side="left", padx=5)
 
         ttk.Label(outer, text="每列点一个用途；只要至少选择一个 Y，就能画图。", foreground="#555555").pack(anchor="w", pady=(4, 5))
         table_box = ttk.Frame(outer)
@@ -99,14 +110,31 @@ class PlotPicker:
         self.canvas.yview_scroll(-int(event.delta / 120), "units")
 
     def choose_file(self):
-        path = filedialog.askopenfilename(
-            parent=self.root, title="选择仪器导出的 CSV 或 TXT",
+        paths = filedialog.askopenfilenames(
+            parent=self.root, title="添加仪器导出的 CSV 或 TXT（可多选）",
             filetypes=[("表格数据", "*.csv *.txt"), ("CSV 数据", "*.csv"), ("TXT 数据", "*.txt"), ("所有文件", "*.*")],
         )
-        if path:
-            self.file_var.set(path)
-            self.output_var.set(str(Path(path).with_name(Path(path).stem + "_plot.opju")))
+        if paths:
+            for path in paths:
+                resolved = Path(path).resolve()
+                if resolved not in self.file_paths:
+                    self.file_paths.append(resolved)
+                    self.file_list.insert("end", str(resolved))
+            if len(self.file_paths) == 1:
+                first = self.file_paths[0]
+                self.output_var.set(str(first.with_name(first.stem + "_plot.opju")))
+            elif len(self.file_paths) > 1:
+                first = self.file_paths[0]
+                self.output_var.set(str(first.with_name("device_comparison.opju")))
             self.load_columns()
+
+    def remove_file(self):
+        selected = self.file_list.curselection()
+        if selected:
+            index = selected[0]
+            self.file_list.delete(index)
+            self.file_paths.pop(index)
+            self.load_columns(show_error=False)
 
     def choose_output(self):
         path = filedialog.asksaveasfilename(
@@ -117,9 +145,17 @@ class PlotPicker:
             self.output_var.set(path)
 
     def load_columns(self, preselect=None, show_error=True):
-        path = Path(self.file_var.get()).expanduser()
+        if not self.file_paths:
+            self.status_var.set("请先添加数据文件。")
+            return
         try:
-            headers = read_headers(path, self.encoding_var.get())
+            headers = read_headers(self.file_paths[0], self.encoding_var.get())
+            shared = set(headers)
+            for path in self.file_paths[1:]:
+                shared.intersection_update(read_headers(path, self.encoding_var.get()))
+            headers = [name for name in headers if name in shared]
+            if not headers:
+                raise ValueError("这些文件没有共同列名，无法共用一套选列配置。")
         except (OSError, UnicodeError, ValueError, csv.Error) as exc:
             self.status_var.set("读取列失败。")
             if show_error:
@@ -155,7 +191,7 @@ class PlotPicker:
                     command=lambda column=name, role=value: self._set_role(column, role),
                 ).grid(row=row, column=col, padx=8, pady=2)
         self.canvas.yview_moveto(0)
-        self.status_var.set(f"已读取 {len(headers)} 列；请选择一个 X 和至少一个 Y。")
+        self.status_var.set(f"已读取 {len(self.file_paths)} 个文件的 {len(headers)} 个共同列；请选择 X 和 Y。")
 
     def _set_role(self, column, role):
         if role == "x":
@@ -166,6 +202,9 @@ class PlotPicker:
             self.x_column = None
 
     def confirm(self):
+        if not self.file_paths:
+            messagebox.showwarning("数据文件", "请先添加至少一个数据文件。", parent=self.root)
+            return
         selected = {name: choice.get() for name, choice in self.column_choices.items()}
         x_columns = [name for name, role in selected.items() if role == "x"]
         left = [name for name, role in selected.items() if role == "left"]
@@ -180,7 +219,11 @@ class PlotPicker:
         project_path = Path(output_text).expanduser().resolve()
         export_png = self.export_png_var.get()
         png_path = project_path.with_suffix(".png") if export_png else None
-        output_paths = (project_path, png_path) if png_path else (project_path,)
+        plot_mode = "separate" if self.mode_var.get() == "分别出图" else "overlay"
+        if png_path and len(self.file_paths) > 1 and plot_mode == "separate":
+            output_paths = (project_path, *(png_path.with_name(f"{png_path.stem}_{i + 1:02d}.png") for i in range(len(self.file_paths))))
+        else:
+            output_paths = (project_path, png_path) if png_path else (project_path,)
         existing = [path.name for path in output_paths if path.exists()]
         overwrite = bool(existing)
         if existing and not messagebox.askyesno(
@@ -188,19 +231,21 @@ class PlotPicker:
         ):
             return
         config = {
-            "data_file": Path(self.file_var.get()).expanduser().resolve(),
+            "data_file": self.file_paths[0],
+            "data_files": self.file_paths.copy(),
             "encoding": self.encoding_var.get(),
             "x": x_columns[0],
             "left_y": left,
             "right_y": right,
             "kind": self.kind_var.get(),
+            "plot_mode": plot_mode,
             "output_project": project_path,
             "export_png": export_png,
         }
         if png_path:
             config["output_png"] = png_path
         try:
-            values = read_selected(config)
+            values = read_sources(config)
         except (OSError, UnicodeError, ValueError, csv.Error) as exc:
             messagebox.showerror("数据检查失败", str(exc), parent=self.root)
             return
@@ -216,7 +261,7 @@ def main():
         return
     try:
         config, values, overwrite = picker.result
-        project_path, png_path = run_external(config, values, overwrite=overwrite)
+        project_path, png_paths = run_external(config, values, overwrite=overwrite)
     except Exception as exc:
         error_root = tk.Tk()
         error_root.withdraw()
@@ -226,8 +271,8 @@ def main():
     success_root = tk.Tk()
     success_root.withdraw()
     success_text = f"Origin 工程：\n{project_path}"
-    if png_path:
-        success_text += f"\n\n预览 PNG：\n{png_path}"
+    if png_paths:
+        success_text += "\n\n预览 PNG：\n" + "\n".join(map(str, png_paths))
     messagebox.showinfo("生成完成", success_text, parent=success_root)
     success_root.destroy()
 
