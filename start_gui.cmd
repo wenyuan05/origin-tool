@@ -24,7 +24,7 @@ exit /b 0
 
 :python_missing
 echo Python 3.11 ^(64-bit^) was not found. Install it, then double-click this file again.
-echo See README.md for the requirements.
+echo See docs\PYTHON_INSTALL.md for step-by-step installation.
 goto failed
 
 :setup_failed

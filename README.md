@@ -5,7 +5,7 @@
 ## 依赖（首次安装）
 
 - Windows，已安装并授权 Origin/OriginPro 2021 或更新版本。
-- 64 位 Python 3.11（其他受 OriginExt 支持的 Python 版本也可使用）。
+- 64 位 Python 3.11；首次安装可按 [Python 安装教程](docs/PYTHON_INSTALL.md) 操作。
 - 项目依赖见 requirements.txt：originpro，安装时会带上 OriginExt。图形窗口使用 Python 标准库 tkinter，CSV 读取不需 pandas。
 
 将项目文件夹复制或解压到任意位置，双击 [一键启动.cmd](一键启动.cmd) 即可。首次启动会在项目文件夹里创建 `.venv` 并安装依赖，需要联网；以后双击同一个文件即可打开选列窗口。电脑需先安装 64 位 Python 3.11 和 Origin；若缺少 Python 或安装失败，窗口会显示错误并停留，便于查看原因。
@@ -18,7 +18,7 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ~~~
 
-如果 py -3.11 不可用，可换成另一套 64 位且与 OriginExt wheel 兼容的 Python。虚拟环境装在本目录，不修改全局 Python。
+一键启动文件固定使用 `py -3.11`；若想手动换用其他受 OriginExt 支持的 64 位 Python，需要自行创建虚拟环境。虚拟环境装在本目录，不修改全局 Python。
 
 ## 分享给其他人
 
@@ -54,7 +54,7 @@ py -3.11 -m venv .venv
 - `app/`：GUI、绘图脚本与 CSV/TXT 读取代码。
 - `config/`：无窗口模式的默认配置。
 - `examples/`：10 列 CSV/TXT 模拟仪器数据，以及早期的 4 列试用数据。
-- `docs/`：双 Y 选列示例和 [Origin 手动画图速查](docs/QUICK_START.md)。
+- `docs/`：[Python 安装教程](docs/PYTHON_INSTALL.md)、双 Y 选列示例和 [Origin 手动画图速查](docs/QUICK_START.md)。
 - `outputs/`：默认工程输出位置；程序会自动创建，Git 不收录其中的生成文件。
 
 `app/plot_csv_origin.py` 是早期在 Origin 内手动画单 Y 图的示例，当前自动工程流程不需要它。
