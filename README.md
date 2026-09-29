@@ -8,7 +8,9 @@
 - 64 位 Python 3.11（其他受 OriginExt 支持的 Python 版本也可使用）。
 - 项目依赖见 requirements.txt：originpro，安装时会带上 OriginExt。图形窗口使用 Python 标准库 tkinter，CSV 读取不需 pandas。
 
-将项目文件夹复制或解压到任意位置，在 PowerShell 7 中进入该文件夹并执行一次：
+将项目文件夹复制或解压到任意位置，双击 [一键启动.cmd](一键启动.cmd) 即可。首次启动会在项目文件夹里创建 `.venv` 并安装依赖，需要联网；以后双击同一个文件即可打开选列窗口。电脑需先安装 64 位 Python 3.11 和 Origin；若缺少 Python 或安装失败，窗口会显示错误并停留，便于查看原因。
+
+也可以在 PowerShell 7 中手动安装：
 
 ~~~powershell
 cd "你的 Origin_tool 文件夹路径"
@@ -24,7 +26,7 @@ py -3.11 -m venv .venv
 
 ## 日常使用
 
-双击 [start_gui.cmd](start_gui.cmd)，或在 PowerShell 7 中执行：
+双击 [一键启动.cmd](一键启动.cmd)（或 `start_gui.cmd`），也可以在 PowerShell 7 中执行：
 
 ~~~powershell
 .\.venv\Scripts\python.exe .\origin_plot_gui.py
