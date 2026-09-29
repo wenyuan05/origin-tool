@@ -1,9 +1,10 @@
-"""Create an editable Origin project from selected CSV columns via external Python."""
+"""Create an editable Origin project from selected CSV/TXT columns via external Python."""
 
-import csv
 import json
 import math
 from pathlib import Path
+
+from table_text import iter_table_rows, validate_headers
 
 
 CONFIG_FILE = Path(__file__).with_name("plot_config.json")
@@ -69,20 +70,20 @@ def read_selected(config):
     names = selected_columns(config)
     values = {name: [] for name in names}
     with path.open("r", encoding=config["encoding"], newline="") as handle:
-        reader = csv.DictReader(handle)
-        headers = reader.fieldnames or []
-        if not headers or len(headers) != len(set(headers)):
-            raise ValueError("CSV 表头为空或包含重名列。")
+        rows = iter_table_rows(handle)
+        _, headers = next(rows, (0, []))
+        validate_headers(headers)
         missing = [name for name in names if name not in headers]
         if missing:
-            raise ValueError(f"CSV 缺少列 {missing}；现有列：{headers}")
-        for row_number, row in enumerate(reader, start=2):
-            if None in row:
-                raise ValueError(f"CSV 第 {row_number} 行比表头多出字段。")
+            raise ValueError(f"数据文件缺少列 {missing}；现有列：{headers}")
+        column_indices = {name: headers.index(name) for name in names}
+        for row_number, row in rows:
+            if len(row) > len(headers):
+                raise ValueError(f"第 {row_number} 行比表头多出字段。")
             for name in names:
                 try:
-                    value = float(row[name])
-                except (TypeError, ValueError) as exc:
+                    value = float(row[column_indices[name]])
+                except (IndexError, TypeError, ValueError) as exc:
                     raise ValueError(f"第 {row_number} 行的 {name} 为空或不是数字。") from exc
                 if not math.isfinite(value):
                     raise ValueError(f"第 {row_number} 行的 {name} 必须是有限数字。")
@@ -203,7 +204,7 @@ def run_external(config, values, overwrite=False, op=None):
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="从 CSV 生成含工作表和图窗的 Origin .opju 工程")
+    parser = argparse.ArgumentParser(description="从 CSV/TXT 生成含工作表和图窗的 Origin .opju 工程")
     parser.add_argument("--config", type=Path, default=CONFIG_FILE, help="JSON 配置文件")
     parser.add_argument("--check-only", action="store_true", help="只检查数据和列配置，不启动 Origin")
     parser.add_argument("--overwrite", action="store_true", help="允许覆盖已有输出文件")

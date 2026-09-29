@@ -1,6 +1,6 @@
 # Origin 画图速查（第一次使用）
 
-目标：把 `sample_measurements.csv` 的 **时间**画在横轴、**温度**画在纵轴。
+目标：把 `sample_measurements.csv` 的 **时间**画在横轴、**温度**画在纵轴。项目的外部自动绘图工具也支持首行为列名的 TXT 表格，见 [README.md](README.md)。
 
 1. **导入数据**：打开 Origin，点顶部菜单 **Data → Connect to File → Text/CSV**，选本项目文件夹里的 `sample_measurements.csv`，确认导入选项。看到四列数字的表格就算成功。
 2. **指定横轴**：在表格里，右键 `time_s` 所在的整列列头（A 列），选 **Set As → X**。列头应显示 `A(X)`。

@@ -1,6 +1,6 @@
-# CSV 数据生成 Origin 工程
+# CSV/TXT 数据生成 Origin 工程
 
-这个工具从普通 Python 启动一个临时选列窗口，读取仪器 CSV 中选定的 X、左 Y 和右 Y 列，调用本机 Origin 自动生成包含数据工作表和可编辑图窗的 .opju 工程。需要时可勾选导出同名 .png 预览图，默认不导出。无需先打开 Origin 界面。未选中的 CSV 列不会进入工程。
+这个工具从普通 Python 启动一个临时选列窗口，读取仪器 CSV/TXT 中选定的 X、左 Y 和右 Y 列，调用本机 Origin 自动生成包含数据工作表和可编辑图窗的 .opju 工程。需要时可勾选导出同名 .png 预览图，默认不导出。无需先打开 Origin 界面。未选中的数据列不会进入工程。
 
 ## 依赖（首次安装）
 
@@ -32,11 +32,11 @@ py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe .\origin_plot_gui.py
 ~~~
 
-1. 点“选择文件…”，选择 CSV；若中文表头乱码，试把编码切换为 gb18030。
+1. 点“选择文件…”，选择 CSV 或 TXT；若中文表头乱码，试把编码切换为 gb18030。
 2. 每列选“忽略 / X / 左 Y / 右 Y”。需要恰好 1 列 X、至少 1 列 Y；左右 Y 可各选 0 列或多列。
 3. 选择 .opju 保存位置；需要预览图时勾选“同时导出 PNG 预览图”，再点“生成工程”。若本次要生成的文件已存在，窗口会先询问是否覆盖。
 
-自带的 sample_instrument_export.csv 有 10 列，其中几列是无关数据或文字，适合先试用。示例映射：time_s → X，temperature_C → 左 Y，pressure_kPa → 右 Y。工程内写入这三列数值，因此日后打开工程无需原 CSV 的路径。
+自带的 sample_instrument_export.csv 和 sample_instrument_export.txt 是同一份 10 列模拟仪器数据，分别使用逗号和制表符分隔，其中几列是无关数据或文字，适合先试用。示例映射：time_s → X，temperature_C → 左 Y，pressure_kPa → 右 Y。工程内写入这三列数值，因此日后打开工程无需原数据文件的路径。
 
 ## 不打开窗口，直接按配置生成
 
@@ -54,9 +54,9 @@ py -3.11 -m venv .venv
 - origin_plot_gui.py：外部 Python 的选列窗口。
 - plot_dual_y_origin.py：数据检查、Origin 绘图和 .opju / PNG 保存。
 - plot_config.json：无窗口模式的默认配置。
-- sample_instrument_export.csv：10 列模拟仪器数据；sample_measurements.csv：早期的 4 列试用数据。
+- sample_instrument_export.csv / .txt：同一份 10 列模拟仪器数据；sample_measurements.csv：早期的 4 列试用数据。
 - plot_csv_origin.py、QUICK_START.md：早期在 Origin 内手动画单 Y 图的示例，当前自动工程流程不需要它们。
 
-目前输入支持逗号分隔的 CSV；如仪器输出 Excel/TSV，请先另存为 CSV。需要本机 Origin 自动化服务可启动并有有效授权；若保存失败，命令行会报错，GUI 会显示错误。
+输入文件首行必须是列名。CSV/TXT 可使用制表符、逗号、分号或连续空白分隔；连续空白分隔时列名不能含空格。文件的后续行应使用相同分隔方式；无需绘图的列可以是文字。Excel 文件请先另存为 CSV 或文本文件。需要本机 Origin 自动化服务可启动并有有效授权；若保存失败，命令行会报错，GUI 会显示错误。
 
 实现依据：[Origin 外部 Python 说明](https://docs.originlab.com/externalpython/)、[官方 .opju 保存示例](https://docs.originlab.com/externalpython/external-python-code-samples/)。

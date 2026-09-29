@@ -1,6 +1,6 @@
 # X / 左 Y / 右 Y 选列示例
 
-日常操作请看 [README.md](README.md)。本示例数据在 [sample_instrument_export.csv](sample_instrument_export.csv)，有 10 列，只选 time_s、temperature_C、pressure_kPa 这三列绘图。
+日常操作请看 [README.md](README.md)。本示例数据提供 [CSV](sample_instrument_export.csv) 和 [TXT](sample_instrument_export.txt) 两种格式，均有 10 列，只选 time_s、temperature_C、pressure_kPa 这三列绘图。
 
 在 GUI 中选：
 

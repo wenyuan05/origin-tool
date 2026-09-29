@@ -1,4 +1,4 @@
-"""Standalone column picker that generates an Origin .opju project."""
+"""Standalone CSV/TXT column picker that generates an Origin .opju project."""
 
 import csv
 import sys
@@ -12,12 +12,13 @@ if str(TOOL_DIR) not in sys.path:
     sys.path.insert(0, str(TOOL_DIR))
 
 from plot_dual_y_origin import load_config, read_selected, run_external
+from table_text import read_headers
 
 
 class PlotPicker:
     def __init__(self, root):
         self.root = root
-        self.root.title("CSV → Origin 工程")
+        self.root.title("CSV/TXT → Origin 工程")
         self.root.geometry("840x650")
         self.root.minsize(680, 500)
         self.result = None
@@ -34,7 +35,7 @@ class PlotPicker:
         self.encoding_var = tk.StringVar(value=default.get("encoding", "utf-8-sig"))
         self.kind_var = tk.StringVar(value=default.get("kind", "line+symbol"))
         self.export_png_var = tk.BooleanVar(value=default.get("export_png", False))
-        self.status_var = tk.StringVar(value="选择 CSV，再指定一个 X 列和至少一个 Y 列。")
+        self.status_var = tk.StringVar(value="选择 CSV 或 TXT，再指定一个 X 列和至少一个 Y 列。")
 
         self._build_ui()
         if self.file_var.get():
@@ -44,12 +45,12 @@ class PlotPicker:
         outer = ttk.Frame(self.root, padding=14)
         outer.pack(fill="both", expand=True)
 
-        ttk.Label(outer, text="CSV 数据生成 Origin 工程", font=("Microsoft YaHei UI", 15, "bold")).pack(anchor="w")
+        ttk.Label(outer, text="CSV/TXT 数据生成 Origin 工程", font=("Microsoft YaHei UI", 15, "bold")).pack(anchor="w")
         ttk.Label(outer, text="只画你选中的列；左右 Y 轴可各选 0 列或多列。", foreground="#555555").pack(anchor="w", pady=(3, 12))
 
         file_row = ttk.Frame(outer)
         file_row.pack(fill="x", pady=3)
-        ttk.Label(file_row, text="数据 CSV", width=10).pack(side="left")
+        ttk.Label(file_row, text="数据文件", width=10).pack(side="left")
         ttk.Entry(file_row, textvariable=self.file_var).pack(side="left", fill="x", expand=True, padx=5)
         ttk.Button(file_row, text="选择文件…", command=self.choose_file).pack(side="left", padx=(0, 5))
         ttk.Button(file_row, text="读取列", command=self.load_columns).pack(side="left")
@@ -99,8 +100,8 @@ class PlotPicker:
 
     def choose_file(self):
         path = filedialog.askopenfilename(
-            parent=self.root, title="选择仪器导出的 CSV",
-            filetypes=[("CSV 数据", "*.csv"), ("所有文件", "*.*")],
+            parent=self.root, title="选择仪器导出的 CSV 或 TXT",
+            filetypes=[("表格数据", "*.csv *.txt"), ("CSV 数据", "*.csv"), ("TXT 数据", "*.txt"), ("所有文件", "*.*")],
         )
         if path:
             self.file_var.set(path)
@@ -118,21 +119,18 @@ class PlotPicker:
     def load_columns(self, preselect=None, show_error=True):
         path = Path(self.file_var.get()).expanduser()
         try:
-            with path.open("r", encoding=self.encoding_var.get(), newline="") as handle:
-                headers = next(csv.reader(handle), [])
-            if not headers or len(headers) != len(set(headers)):
-                raise ValueError("CSV 表头为空或含重名列。")
+            headers = read_headers(path, self.encoding_var.get())
         except (OSError, UnicodeError, ValueError, csv.Error) as exc:
             self.status_var.set("读取列失败。")
             if show_error:
-                messagebox.showerror("无法读取 CSV", str(exc), parent=self.root)
+                messagebox.showerror("无法读取数据文件", str(exc), parent=self.root)
             return
 
         for child in self.columns_frame.winfo_children():
             child.destroy()
         self.column_choices.clear()
         self.x_column = None
-        headings = ("CSV 列名", "忽略", "X", "左 Y", "右 Y")
+        headings = ("数据列名", "忽略", "X", "左 Y", "右 Y")
         for col, label in enumerate(headings):
             ttk.Label(self.columns_frame, text=label, font=("Microsoft YaHei UI", 9, "bold")).grid(
                 row=0, column=col, sticky="w" if col == 0 else "", padx=8, pady=5

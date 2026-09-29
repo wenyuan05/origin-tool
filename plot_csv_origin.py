@@ -1,10 +1,16 @@
-"""Plot selected numeric CSV columns in Origin's embedded Python."""
+"""Plot selected numeric CSV/TXT columns in Origin's embedded Python."""
 
 import argparse
-import csv
 import math
+import sys
 from pathlib import Path
 
+
+TOOL_DIR = Path(__file__).resolve().parent
+if str(TOOL_DIR) not in sys.path:
+    sys.path.insert(0, str(TOOL_DIR))
+
+from table_text import iter_table_rows, read_headers, validate_headers
 
 # 第一次试用 Origin 时，只需修改下面三项。
 DEFAULT_FILE = Path(__file__).with_name("sample_measurements.csv")
@@ -20,22 +26,22 @@ def read_xy(file_path: Path, x_column: str, y_column: str):
         raise FileNotFoundError(f"找不到数据文件：{file_path}")
 
     with file_path.open("r", encoding="utf-8-sig", newline="") as handle:
-        reader = csv.DictReader(handle)
-        headers = reader.fieldnames or []
-        if not headers or len(headers) != len(set(headers)):
-            raise ValueError("CSV 表头为空或包含重名列。")
+        rows = iter_table_rows(handle)
+        _, headers = next(rows, (0, []))
+        validate_headers(headers)
         missing = [name for name in (x_column, y_column) if name not in headers]
         if missing:
             raise ValueError(f"找不到列 {missing}；可选列：{headers}")
 
+        x_index, y_index = headers.index(x_column), headers.index(y_column)
         x_values, y_values = [], []
-        for row_number, row in enumerate(reader, start=2):
-            if None in row:
+        for row_number, row in rows:
+            if len(row) > len(headers):
                 raise ValueError(f"第 {row_number} 行比表头多出字段。")
             try:
-                x_value = float(row[x_column])
-                y_value = float(row[y_column])
-            except (TypeError, ValueError) as exc:
+                x_value = float(row[x_index])
+                y_value = float(row[y_index])
+            except (IndexError, TypeError, ValueError) as exc:
                 raise ValueError(f"第 {row_number} 行的 X/Y 值为空或不是数字。") from exc
             if not (math.isfinite(x_value) and math.isfinite(y_value)):
                 raise ValueError(f"第 {row_number} 行的 X/Y 值必须是有限数字。")
@@ -48,11 +54,7 @@ def read_xy(file_path: Path, x_column: str, y_column: str):
 
 
 def list_columns(file_path: Path):
-    with file_path.open("r", encoding="utf-8-sig", newline="") as handle:
-        headers = next(csv.reader(handle), [])
-    if not headers:
-        raise ValueError("CSV 文件没有表头。")
-    return headers
+    return read_headers(file_path)
 
 
 def plot_csv(file_path, x_column, y_column, kind="scatter", output_path=None):
@@ -91,8 +93,8 @@ def plot_csv(file_path, x_column, y_column, kind="scatter", output_path=None):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="选择 CSV 的 X/Y 数值列并在 Origin 中绘图")
-    parser.add_argument("--file", type=Path, default=DEFAULT_FILE, help="CSV 文件路径")
+    parser = argparse.ArgumentParser(description="选择 CSV/TXT 的 X/Y 数值列并在 Origin 中绘图")
+    parser.add_argument("--file", type=Path, default=DEFAULT_FILE, help="CSV/TXT 文件路径")
     parser.add_argument("--x", default=DEFAULT_X, help="X 列表头")
     parser.add_argument("--y", default=DEFAULT_Y, help="Y 列表头")
     parser.add_argument("--kind", choices=["scatter", "line", "line+symbol"], default="scatter")
