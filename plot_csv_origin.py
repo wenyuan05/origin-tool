@@ -96,7 +96,7 @@ def main():
     parser.add_argument("--x", default=DEFAULT_X, help="X 列表头")
     parser.add_argument("--y", default=DEFAULT_Y, help="Y 列表头")
     parser.add_argument("--kind", choices=["scatter", "line", "line+symbol"], default="scatter")
-    parser.add_argument("--output", type=Path, help="PNG 输出路径；默认放在 CSV 同目录")
+    parser.add_argument("--output", type=Path, help="可选的 PNG 输出路径；不指定则不导出")
     parser.add_argument("--list-columns", action="store_true", help="只列出可选列，不启动 Origin")
     parser.add_argument("--check-only", action="store_true", help="只检查 X/Y 数据，不启动 Origin")
     args = parser.parse_args()
@@ -109,8 +109,7 @@ def main():
         print(f"检查通过：{len(x_values)} 个点；X={args.x}，Y={args.y}")
         return
 
-    output_path = args.output or args.file.with_name("origin_test_plot.png")
-    plot_csv(args.file, args.x, args.y, args.kind, output_path)
+    plot_csv(args.file, args.x, args.y, args.kind, args.output)
 
 
 if __name__ == "__main__":

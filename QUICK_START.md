@@ -17,4 +17,4 @@
 run -pyf "<项目文件夹完整路径>\plot_csv_origin.py";
 ```
 
-脚本默认画相同的时间—温度散点图，并在数据 CSV 旁导出 `origin_test_plot.png`。如需改列，编辑脚本开头的 `DEFAULT_X` 和 `DEFAULT_Y`。
+脚本默认画相同的时间—温度散点图，不导出 PNG。如需改列，编辑脚本开头的 `DEFAULT_X` 和 `DEFAULT_Y`；从命令行运行时，传入 `--output 图片路径.png` 才会额外导出图片。

@@ -33,6 +33,7 @@ class PlotPicker:
         self.output_var = tk.StringVar(value=str(default.get("output_project", "")))
         self.encoding_var = tk.StringVar(value=default.get("encoding", "utf-8-sig"))
         self.kind_var = tk.StringVar(value=default.get("kind", "line+symbol"))
+        self.export_png_var = tk.BooleanVar(value=default.get("export_png", False))
         self.status_var = tk.StringVar(value="选择 CSV，再指定一个 X 列和至少一个 Y 列。")
 
         self._build_ui()
@@ -84,6 +85,8 @@ class PlotPicker:
         ttk.Label(output_row, text="工程 OPJU", width=10).pack(side="left")
         ttk.Entry(output_row, textvariable=self.output_var).pack(side="left", fill="x", expand=True, padx=5)
         ttk.Button(output_row, text="保存位置…", command=self.choose_output).pack(side="left")
+
+        ttk.Checkbutton(outer, text="同时导出 PNG 预览图", variable=self.export_png_var).pack(anchor="w", pady=(4, 0))
 
         actions = ttk.Frame(outer)
         actions.pack(fill="x", pady=(10, 0))
@@ -177,8 +180,10 @@ class PlotPicker:
             messagebox.showwarning("工程位置", "请输入以 .opju 结尾的工程路径。", parent=self.root)
             return
         project_path = Path(output_text).expanduser().resolve()
-        png_path = project_path.with_suffix(".png")
-        existing = [path.name for path in (project_path, png_path) if path.exists()]
+        export_png = self.export_png_var.get()
+        png_path = project_path.with_suffix(".png") if export_png else None
+        output_paths = (project_path, png_path) if png_path else (project_path,)
+        existing = [path.name for path in output_paths if path.exists()]
         overwrite = bool(existing)
         if existing and not messagebox.askyesno(
             "确认覆盖", "以下文件已存在，是否覆盖？\n" + "\n".join(existing), parent=self.root
@@ -192,8 +197,10 @@ class PlotPicker:
             "right_y": right,
             "kind": self.kind_var.get(),
             "output_project": project_path,
-            "output_png": png_path,
+            "export_png": export_png,
         }
+        if png_path:
+            config["output_png"] = png_path
         try:
             values = read_selected(config)
         except (OSError, UnicodeError, ValueError, csv.Error) as exc:
@@ -220,7 +227,10 @@ def main():
         raise
     success_root = tk.Tk()
     success_root.withdraw()
-    messagebox.showinfo("生成完成", f"Origin 工程：\n{project_path}\n\n预览 PNG：\n{png_path}", parent=success_root)
+    success_text = f"Origin 工程：\n{project_path}"
+    if png_path:
+        success_text += f"\n\n预览 PNG：\n{png_path}"
+    messagebox.showinfo("生成完成", success_text, parent=success_root)
     success_root.destroy()
 
 

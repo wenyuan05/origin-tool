@@ -24,8 +24,9 @@
   "right_y": ["pressure_kPa"],
   "kind": "line+symbol",
   "output_project": "instrument_plot.opju",
-  "output_png": "instrument_plot.png"
+  "export_png": false
 }
 ~~~
 
 kind 可填 scatter、line 或 line+symbol。左右 Y 可以用 [] 表示不选；两边不可同时为空。encoding 可按仪器 CSV 改为 gb18030。
+默认不导出 PNG；将 export_png 改为 true 才会在工程旁生成同名预览图。如需单独指定图片位置，再添加 output_png 路径。

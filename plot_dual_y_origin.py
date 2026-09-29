@@ -31,22 +31,29 @@ def load_config(config_path=CONFIG_FILE):
     with config_path.open("r", encoding="utf-8-sig") as handle:
         config = json.load(handle)
     base = config_path.parent
-    required = ("data_file", "x", "left_y", "right_y", "output_project", "output_png")
+    required = ("data_file", "x", "left_y", "right_y", "output_project")
     missing = [key for key in required if key not in config]
     if missing:
         raise ValueError(f"配置缺少字段：{', '.join(missing)}")
 
-    for key in ("data_file", "output_project", "output_png"):
+    for key in ("data_file", "output_project"):
         if not isinstance(config[key], str) or not config[key].strip():
             raise ValueError(f"配置 {key} 必须是非空文字。")
     selected_columns(config)
     config["data_file"] = (base / config["data_file"]).resolve()
     config["output_project"] = (base / config["output_project"]).resolve()
-    config["output_png"] = (base / config["output_png"]).resolve()
     if config["output_project"].suffix.lower() != ".opju":
         raise ValueError("output_project 必须以 .opju 结尾。")
-    if config["output_png"].suffix.lower() != ".png":
-        raise ValueError("output_png 必须以 .png 结尾。")
+    config["export_png"] = config.get("export_png", False)
+    if not isinstance(config["export_png"], bool):
+        raise ValueError("export_png 必须是 true 或 false。")
+    if config["export_png"]:
+        output_png = config.get("output_png", str(config["output_project"].with_suffix(".png")))
+        if not isinstance(output_png, str) or not output_png.strip():
+            raise ValueError("output_png 必须是非空文字。")
+        config["output_png"] = (base / output_png).resolve()
+        if config["output_png"].suffix.lower() != ".png":
+            raise ValueError("output_png 必须以 .png 结尾。")
     config["kind"] = config.get("kind", "line+symbol")
     if config["kind"] not in {"scatter", "line", "line+symbol"}:
         raise ValueError("kind 只能是 scatter、line 或 line+symbol。")
@@ -143,12 +150,18 @@ def plot(config, values, op):
 
 
 def run_external(config, values, overwrite=False, op=None):
-    """Use a separate Origin automation session and save OPJU plus PNG."""
+    """Use a separate Origin automation session and optionally export PNG."""
     project_path = Path(config["output_project"]).resolve()
-    png_path = Path(config["output_png"]).resolve()
-    if project_path.suffix.lower() != ".opju" or png_path.suffix.lower() != ".png":
-        raise ValueError("输出路径必须分别以 .opju 和 .png 结尾。")
-    existing = [str(path) for path in (project_path, png_path) if path.exists()]
+    export_png = config.get("export_png", False)
+    if not isinstance(export_png, bool):
+        raise ValueError("export_png 必须是 true 或 false。")
+    png_path = None
+    if export_png:
+        png_path = Path(config.get("output_png", project_path.with_suffix(".png"))).resolve()
+    if project_path.suffix.lower() != ".opju" or (png_path and png_path.suffix.lower() != ".png"):
+        raise ValueError("输出路径扩展名不正确。")
+    output_paths = (project_path, png_path) if png_path else (project_path,)
+    existing = [str(path) for path in output_paths if path.exists()]
     if existing and not overwrite:
         raise FileExistsError("输出文件已存在：" + "、".join(existing))
 
@@ -163,7 +176,8 @@ def run_external(config, values, overwrite=False, op=None):
         raise RuntimeError("请从普通 Python 运行本脚本；这里需要外部版 originpro。")
 
     project_path.parent.mkdir(parents=True, exist_ok=True)
-    png_path.parent.mkdir(parents=True, exist_ok=True)
+    if png_path:
+        png_path.parent.mkdir(parents=True, exist_ok=True)
     try:
         # No op.attach(): the automation session stays separate from a user's open project.
         op.set_show(False)
@@ -172,15 +186,17 @@ def run_external(config, values, overwrite=False, op=None):
         op.wait()
         if not op.save(str(project_path)) or not project_path.is_file() or project_path.stat().st_size == 0:
             raise RuntimeError("Origin 未能保存有效的 .opju 工程文件。")
-        exported = graph.save_fig(str(png_path), type="png", width=1200)
-        if not exported or not png_path.is_file() or png_path.stat().st_size == 0:
-            raise RuntimeError(f"工程已保存到 {project_path}，但 PNG 导出失败。")
+        if png_path:
+            exported = graph.save_fig(str(png_path), type="png", width=1200)
+            if not exported or not png_path.is_file() or png_path.stat().st_size == 0:
+                raise RuntimeError(f"工程已保存到 {project_path}，但 PNG 导出失败。")
     finally:
         op.exit()
 
     print(f"已绘制 {len(values[config['x']])} 行；X={config['x']}；左 Y={config['left_y']}；右 Y={config['right_y']}")
     print(f"Origin 工程：{project_path}")
-    print(f"PNG：{png_path}")
+    if png_path:
+        print(f"PNG：{png_path}")
     return project_path, png_path
 
 
@@ -190,7 +206,7 @@ def main():
     parser = argparse.ArgumentParser(description="从 CSV 生成含工作表和图窗的 Origin .opju 工程")
     parser.add_argument("--config", type=Path, default=CONFIG_FILE, help="JSON 配置文件")
     parser.add_argument("--check-only", action="store_true", help="只检查数据和列配置，不启动 Origin")
-    parser.add_argument("--overwrite", action="store_true", help="允许覆盖已有 .opju 和 PNG")
+    parser.add_argument("--overwrite", action="store_true", help="允许覆盖已有输出文件")
     args = parser.parse_args()
     config = load_config(args.config)
     values = read_selected(config)

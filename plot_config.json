@@ -6,5 +6,5 @@
   "right_y": ["pressure_kPa"],
   "kind": "line+symbol",
   "output_project": "instrument_plot.opju",
-  "output_png": "instrument_plot.png"
+  "export_png": false
 }
