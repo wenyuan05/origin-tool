@@ -5,20 +5,20 @@
 ## 依赖（首次安装）
 
 - Windows，已安装并授权 Origin/OriginPro 2021 或更新版本。
-- 64 位 Python 3.11；首次安装可按 [Python 安装教程](docs/PYTHON_INSTALL.md) 操作。
+- 已安装的 64 位 CPython 3.8–3.14；一键启动会寻找可用版本。首次安装可按 [Python 安装教程](docs/PYTHON_INSTALL.md) 操作。
 - 项目依赖见 requirements.txt：originpro，安装时会带上 OriginExt。图形窗口使用 Python 标准库 tkinter，CSV 读取不需 pandas。
 
-将项目文件夹复制或解压到任意位置，双击 [一键启动.cmd](一键启动.cmd) 即可。首次启动会在项目文件夹里创建 `.venv` 并安装依赖，需要联网；以后双击同一个文件即可打开选列窗口。电脑需先安装 64 位 Python 3.11 和 Origin；若缺少 Python 或安装失败，窗口会显示错误并停留，便于查看原因。
+将项目文件夹复制或解压到任意位置，双击 [一键启动.cmd](一键启动.cmd) 即可。首次启动会从电脑已有的兼容 Python 中选择一个，在项目文件夹里创建 `.venv` 并安装依赖，需要联网；以后会复用这个环境。电脑还需安装 Origin；若缺少可用 Python 或安装失败，窗口会显示错误并停留，便于查看原因。
 
-也可以在 PowerShell 7 中手动安装：
+也可以在 PowerShell 7 中手动安装。以下以已安装 Python 3.14 为例；请将 `3.14` 换成自己电脑上的兼容版本：
 
 ~~~powershell
 cd "你的 Origin_tool 文件夹路径"
-py -3.11 -m venv .venv
+py -3.14 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ~~~
 
-一键启动文件固定使用 `py -3.11`；若想手动换用其他受 OriginExt 支持的 64 位 Python，需要自行创建虚拟环境。虚拟环境装在本目录，不修改全局 Python。
+若电脑没有 `py` 启动器、但 `python` 命令指向兼容版本，一键启动也会使用它。虚拟环境装在本目录，不修改全局 Python；已有可用的 `.venv` 会继续复用。
 
 ## 分享给其他人
 
