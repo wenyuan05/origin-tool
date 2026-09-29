@@ -7,7 +7,7 @@ from pathlib import Path
 from table_text import iter_table_rows, validate_headers
 
 
-CONFIG_FILE = Path(__file__).with_name("plot_config.json")
+CONFIG_FILE = Path(__file__).resolve().parent.parent / "config" / "plot_config.json"
 
 
 def selected_columns(config):

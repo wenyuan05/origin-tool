@@ -29,33 +29,35 @@ py -3.11 -m venv .venv
 双击 [一键启动.cmd](一键启动.cmd)（或 `start_gui.cmd`），也可以在 PowerShell 7 中执行：
 
 ~~~powershell
-.\.venv\Scripts\python.exe .\origin_plot_gui.py
+.\.venv\Scripts\python.exe .\app\origin_plot_gui.py
 ~~~
 
 1. 点“选择文件…”，选择 CSV 或 TXT；若中文表头乱码，试把编码切换为 gb18030。
 2. 每列选“忽略 / X / 左 Y / 右 Y”。需要恰好 1 列 X、至少 1 列 Y；左右 Y 可各选 0 列或多列。
 3. 选择 .opju 保存位置；需要预览图时勾选“同时导出 PNG 预览图”，再点“生成工程”。若本次要生成的文件已存在，窗口会先询问是否覆盖。
 
-自带的 sample_instrument_export.csv 和 sample_instrument_export.txt 是同一份 10 列模拟仪器数据，分别使用逗号和制表符分隔，其中几列是无关数据或文字，适合先试用。示例映射：time_s → X，temperature_C → 左 Y，pressure_kPa → 右 Y。工程内写入这三列数值，因此日后打开工程无需原数据文件的路径。
+`examples/` 中的 sample_instrument_export.csv 和 sample_instrument_export.txt 是同一份 10 列模拟仪器数据，分别使用逗号和制表符分隔，其中几列是无关数据或文字，适合先试用。示例映射：time_s → X，temperature_C → 左 Y，pressure_kPa → 右 Y。工程内写入这三列数值，因此日后打开工程无需原数据文件的路径。
 
 ## 不打开窗口，直接按配置生成
 
-编辑 [plot_config.json](plot_config.json) 的文件路径与列名后运行。默认只生成 `.opju`；如需 PNG，将 `export_png` 改为 `true`，`output_png` 可省略（默认与工程同名）或指定单独路径：
+编辑 [plot_config.json](config/plot_config.json) 的文件路径与列名后运行。配置中的相对路径以 `config/` 为基准；默认工程保存到 `outputs/`，且只生成 `.opju`。如需 PNG，将 `export_png` 改为 `true`，`output_png` 可省略（默认与工程同名）或指定单独路径：
 
 ~~~powershell
-.\.venv\Scripts\python.exe .\plot_dual_y_origin.py --check-only
-.\.venv\Scripts\python.exe .\plot_dual_y_origin.py
+.\.venv\Scripts\python.exe .\app\plot_dual_y_origin.py --check-only
+.\.venv\Scripts\python.exe .\app\plot_dual_y_origin.py
 ~~~
 
 第一次只检查 CSV 和选列，不启动 Origin；第二次在后台生成工程。已有目标文件时，命令行默认拒绝覆盖；明确要覆盖时加 --overwrite。路径可写成绝对路径，或相对于配置文件所在目录的路径。
 
-## 文件与限制
+## 文件夹与限制
 
-- origin_plot_gui.py：外部 Python 的选列窗口。
-- plot_dual_y_origin.py：数据检查、Origin 绘图和 .opju / PNG 保存。
-- plot_config.json：无窗口模式的默认配置。
-- sample_instrument_export.csv / .txt：同一份 10 列模拟仪器数据；sample_measurements.csv：早期的 4 列试用数据。
-- plot_csv_origin.py、QUICK_START.md：早期在 Origin 内手动画单 Y 图的示例，当前自动工程流程不需要它们。
+- `app/`：GUI、绘图脚本与 CSV/TXT 读取代码。
+- `config/`：无窗口模式的默认配置。
+- `examples/`：10 列 CSV/TXT 模拟仪器数据，以及早期的 4 列试用数据。
+- `docs/`：双 Y 选列示例和 [Origin 手动画图速查](docs/QUICK_START.md)。
+- `outputs/`：默认工程输出位置；程序会自动创建，Git 不收录其中的生成文件。
+
+`app/plot_csv_origin.py` 是早期在 Origin 内手动画单 Y 图的示例，当前自动工程流程不需要它。
 
 输入文件首行必须是列名。CSV/TXT 可使用制表符、逗号、分号或连续空白分隔；连续空白分隔时列名不能含空格。文件的后续行应使用相同分隔方式；无需绘图的列可以是文字。Excel 文件请先另存为 CSV 或文本文件。需要本机 Origin 自动化服务可启动并有有效授权；若保存失败，命令行会报错，GUI 会显示错误。
 

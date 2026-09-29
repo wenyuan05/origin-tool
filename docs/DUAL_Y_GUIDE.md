@@ -1,6 +1,6 @@
 # X / 左 Y / 右 Y 选列示例
 
-日常操作请看 [README.md](README.md)。本示例数据提供 [CSV](sample_instrument_export.csv) 和 [TXT](sample_instrument_export.txt) 两种格式，均有 10 列，只选 time_s、temperature_C、pressure_kPa 这三列绘图。
+日常操作请看 [README.md](../README.md)。本示例数据提供 [CSV](../examples/sample_instrument_export.csv) 和 [TXT](../examples/sample_instrument_export.txt) 两种格式，均有 10 列，只选 time_s、temperature_C、pressure_kPa 这三列绘图。
 
 在 GUI 中选：
 
@@ -13,17 +13,17 @@
 
 只画一条曲线时，也可以只选 time_s → X、temperature_C → 左 Y，并把右 Y 留空。左右 Y 各可选任意多列，总共至少一列。
 
-若不想打开 GUI，修改 [plot_config.json](plot_config.json)：
+若不想打开 GUI，修改 [plot_config.json](../config/plot_config.json)。其中的相对路径从 `config/` 文件夹算起：
 
 ~~~json
 {
-  "data_file": "sample_instrument_export.csv",
+  "data_file": "../examples/sample_instrument_export.csv",
   "encoding": "utf-8-sig",
   "x": "time_s",
   "left_y": ["temperature_C"],
   "right_y": ["pressure_kPa"],
   "kind": "line+symbol",
-  "output_project": "instrument_plot.opju",
+  "output_project": "../outputs/instrument_plot.opju",
   "export_png": false
 }
 ~~~

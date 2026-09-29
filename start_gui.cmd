@@ -18,7 +18,7 @@ echo [2/3] Checking Python dependencies...
 if errorlevel 1 goto setup_failed
 
 echo [3/3] Opening the column picker...
-"%venv_python%" "%tool_dir%origin_plot_gui.py"
+"%venv_python%" "%tool_dir%app\origin_plot_gui.py"
 if errorlevel 1 goto run_failed
 exit /b 0
 

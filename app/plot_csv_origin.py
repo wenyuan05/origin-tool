@@ -13,7 +13,7 @@ if str(TOOL_DIR) not in sys.path:
 from table_text import iter_table_rows, read_headers, validate_headers
 
 # 第一次试用 Origin 时，只需修改下面三项。
-DEFAULT_FILE = Path(__file__).with_name("sample_measurements.csv")
+DEFAULT_FILE = TOOL_DIR.parent / "examples" / "sample_measurements.csv"
 DEFAULT_X = "time_s"
 DEFAULT_Y = "temperature_C"
 

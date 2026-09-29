@@ -1,10 +1,10 @@
 {
-  "data_file": "sample_instrument_export.csv",
+  "data_file": "../examples/sample_instrument_export.csv",
   "encoding": "utf-8-sig",
   "x": "time_s",
   "left_y": ["temperature_C"],
   "right_y": ["pressure_kPa"],
   "kind": "line+symbol",
-  "output_project": "instrument_plot.opju",
+  "output_project": "../outputs/instrument_plot.opju",
   "export_png": false
 }
