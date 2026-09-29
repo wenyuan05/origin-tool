@@ -1,57 +1,82 @@
-"""Read simple header-based CSV and delimited TXT tables."""
+"""Detect headers and read CSV/TXT tables with arbitrary preamble lines."""
 
 import csv
-from itertools import chain
 from pathlib import Path
 
 
-METADATA_PREFIXES = ("Measurement Time:", "Device Area:")
+def split_line(line, delimiter):
+    return next(csv.reader((line,), delimiter=delimiter)) if delimiter else line.split()
+
+
+def is_numeric(value):
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def detect_table(lines):
+    """Find a labelled row followed by a matching numeric data row."""
+    for index, line in enumerate(lines):
+        if not line.strip():
+            continue
+        candidates = []
+        for delimiter in ("\t", ",", ";", None):
+            fields = [field.strip() for field in split_line(line, delimiter)]
+            if len(fields) < 2 or any(not field for field in fields) or len(fields) != len(set(fields)):
+                continue
+            if all(is_numeric(field) for field in fields):
+                continue
+            next_index = next((j for j in range(index + 1, len(lines)) if lines[j].strip()), None)
+            if next_index is None:
+                continue
+            sample = split_line(lines[next_index], delimiter)
+            if len(sample) != len(fields) or sum(is_numeric(cell) for cell in sample) < 2:
+                continue
+            candidates.append((delimiter, fields))
+        if candidates:
+            candidates.sort(key=lambda item: item[0] is None)
+            delimiter, headers = candidates[0]
+            return index, delimiter, headers
+    raise ValueError("未能自动识别表头。请检查文件是否包含至少两列的列名，且后面有列数一致的数值数据行。")
+
+
+def read_table_info(path: Path, encoding="utf-8-sig"):
+    with Path(path).open("r", encoding=encoding, newline="") as handle:
+        lines = handle.readlines()
+    index, delimiter, headers = detect_table(lines)
+    return lines, index, delimiter, validate_headers(headers)
 
 
 def read_metadata(path: Path, encoding="utf-8-sig"):
-    """Return recognized preamble lines without treating them as table rows."""
-    lines = []
-    with Path(path).open("r", encoding=encoding, newline="") as handle:
-        for line in handle:
-            if not line.lstrip().startswith(METADATA_PREFIXES):
-                break
-            lines.append(line.strip())
-    return lines
+    """Keep nonblank preamble lines for traceability, without local paths."""
+    lines, index, _, _ = read_table_info(path, encoding)
+    return [line.strip() for line in lines[:index] if line.strip()]
 
 
 def iter_table_rows(handle):
-    """Yield (physical line number, fields), skipping known instrument metadata."""
-    offset = 0
-    first_line = handle.readline()
-    while first_line and first_line.lstrip().startswith(METADATA_PREFIXES):
-        offset += 1
-        first_line = handle.readline()
-    if not first_line:
-        return
-    delimiters = ("\t", ",", ";")
-    field_counts = [len(next(csv.reader((first_line,), delimiter=mark))) for mark in delimiters]
-    best = max(range(len(delimiters)), key=field_counts.__getitem__)
-    delimiter = delimiters[best] if field_counts[best] > 1 else None
-    lines = chain((first_line,), handle)
+    """Yield (physical line number, fields), starting at a detected header."""
+    lines = handle.readlines()
+    index, delimiter, _ = detect_table(lines)
     if delimiter is None:
-        for line_number, line in enumerate(lines, start=offset + 1):
+        for line_number, line in enumerate(lines[index:], start=index + 1):
             fields = line.split()
             if fields:
                 yield line_number, fields
     else:
-        reader = csv.reader(lines, delimiter=delimiter)
+        reader = csv.reader(lines[index:], delimiter=delimiter)
         for fields in reader:
-            if fields:
-                yield offset + reader.line_num, fields
+            if any(field.strip() for field in fields):
+                yield index + reader.line_num, fields
 
 
 def validate_headers(headers):
     if not headers or any(not name.strip() for name in headers) or len(headers) != len(set(headers)):
-        raise ValueError("数据文件首行必须是非空且不重复的列名。")
+        raise ValueError("表头必须包含非空且不重复的列名。")
     return headers
 
 
 def read_headers(path: Path, encoding="utf-8-sig"):
-    with Path(path).open("r", encoding=encoding, newline="") as handle:
-        _, headers = next(iter_table_rows(handle), (0, []))
-    return validate_headers(headers)
+    _, _, _, headers = read_table_info(path, encoding)
+    return headers
