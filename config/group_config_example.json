@@ -1,0 +1,30 @@
+{
+  "groups": [
+    {
+      "name": "光谱文件",
+      "files": [
+        "../examples/sample_spectrum_device_a.txt",
+        "../examples/sample_spectrum_device_b.txt"
+      ],
+      "overlay": false,
+      "x": "Wavelength(nm)",
+      "left_y": ["Ip(uW/nm)-1v"],
+      "right_y": ["Ip(uW/nm)-2v"],
+      "kind": "line"
+    },
+    {
+      "name": "电学对比",
+      "files": [
+        "../examples/sample_spectrum_device_a-Electrical.txt",
+        "../examples/sample_spectrum_device_b-Electrical.txt"
+      ],
+      "overlay": true,
+      "x": "Voltage(V)",
+      "left_y": ["Current density(mA/cm2)"],
+      "right_y": ["Luminance(cd/m2)"],
+      "kind": "line"
+    }
+  ],
+  "encoding": "utf-8-sig",
+  "output_project": "../outputs/group_config_example.opju"
+}

@@ -1,6 +1,7 @@
 """Detect headers and read CSV/TXT tables with arbitrary preamble lines."""
 
 import csv
+import math
 from pathlib import Path
 
 
@@ -80,3 +81,27 @@ def validate_headers(headers):
 def read_headers(path: Path, encoding="utf-8-sig"):
     _, _, _, headers = read_table_info(path, encoding)
     return headers
+
+
+def read_full_table(path: Path, encoding="utf-8-sig"):
+    """Read every column; numeric columns keep NaN and text columns stay text."""
+    path = Path(path)
+    with path.open("r", encoding=encoding, newline="") as handle:
+        rows = iter_table_rows(handle)
+        _, headers = next(rows, (0, []))
+        validate_headers(headers)
+        columns = [[] for _ in headers]
+        for line_number, row in rows:
+            if len(row) != len(headers):
+                raise ValueError(f"{path.name} 第 {line_number} 行有 {len(row)} 列，应为 {len(headers)} 列。")
+            for column, value in zip(columns, row):
+                column.append(value.strip())
+    if not columns or len(columns[0]) < 2:
+        raise ValueError(f"{path.name} 至少需要两行数据。")
+    typed = []
+    for column in columns:
+        try:
+            typed.append([float(value) if value else math.nan for value in column])
+        except ValueError:
+            typed.append(column)
+    return headers, typed, read_metadata(path, encoding)

@@ -1,51 +1,45 @@
-# 器件光谱与电学数据生成 Origin 工程
+# 文件分组生成 Origin 工程
 
-工具从普通 Python 启动窗口，读取一个或多个 CSV/TXT，自动生成包含数据表和可编辑图窗的 `.opju`。支持光谱文件、电学文件、器件匹配和图组控制。
+从 CSV/TXT 中选择数据列，按文件分组生成可编辑的 Origin `.opju` 工程。每组可以单独设置“组内叠加”：勾选后，同组文件画在一张图；不勾选，每个文件分别成图。一个工程可以包含多个分组，各组可以选择不同的 X、左 Y、右 Y 列。
 
-## 环境
+## 准备
 
 - Windows，已安装并授权 Origin/OriginPro 2021 或更新版本。
-- 64 位 CPython 3.8–3.14；双击 [一键启动.cmd](一键启动.cmd) 会自动选择并创建 `.venv`。
-- 依赖见 [requirements.txt](requirements.txt)。首次启动需要联网安装 `originpro` / `OriginExt`。
+- 64 位 CPython 3.8–3.14；双击 [一键启动.cmd](一键启动.cmd) 会寻找可用版本、创建 `.venv` 并安装依赖。首次安装需要联网。没有 Python 时参见 [Python 安装教程](docs/PYTHON_INSTALL.md)。
 
 ## 日常使用
 
-双击 [一键启动.cmd](一键启动.cmd)，或执行：
+双击 [一键启动.cmd](一键启动.cmd)，或运行：
 
 ~~~powershell
-.\.venv\Scripts\python.exe .\app\device_plot_gui.py
+.\.venv\Scripts\python.exe .\app\group_plot_gui.py
 ~~~
 
-1. 在“光谱”和“电学”区域分别添加文件。文件名会自动推断器件名，也可以手动修改；相同器件名表示同一器件的不同数据来源。
-2. 为每个文件填写图组名。同名图组叠加到同一张图，不同图组分别生成图窗。默认光谱按器件分图，电学默认使用“电学对比”图组。
-3. 在各自的选列区指定一个 X、左 Y 和右 Y。需要至少一个 Y；左右 Y 可以各选任意数量。
-4. 选择 `.opju` 保存位置并生成工程。所有结果放在同一个工程中。
+1. 创建分组，并在每组内添加一个或多个 CSV/TXT 文件。分组名可以随时修改。
+2. 按需要勾选“组内叠加”。例如把多个光谱文件放一组并关闭叠加，每份光谱单独出图；把多个电学文件放另一组并开启叠加，得到电学对比图。
+3. 在每组的共同列名中选一个 X、至少一个 Y；左 Y 和右 Y 都可以选多列。不同组可以有不同列结构。选择 `.opju` 保存位置并点击“生成工程”。
 
-光谱文件通常一个器件一份文件，每个图组生成一张光谱图。电学文件会合并到同一张“电学数据合并”工作表；每个文件的列保持自己的行顺序，行数不同的列留空，绘图时每条曲线使用自己的 X 列。
+每组的数据保存在一张 Origin 工作表内，各文件的原始列并排放置。不同文件的行数或 X 点位可以不同；短列的后续行留空。图中的每条曲线引用各自文件的 X 列。文件名和表头前的测量说明写入工程的 `Source_Info` 便签，不写入电脑绝对路径。
 
-## 表头与数据识别
+## 表头识别
 
-表头识别不依赖固定行号。程序会跳过空行和前置说明，寻找“非空、不重复列名，且后面紧跟列数一致数值数据”的行；识别失败时窗口会提示检查文件内容或编码。支持制表符、逗号、分号和连续空白分隔。`Measurement Time:`、`Device Area:` 等前置信息会写入工程的 `Source_Info` 便签，便签不记录电脑绝对路径。
+程序不依赖固定表头行号，会跳过空行和前置说明，寻找后面紧跟列数一致数值数据的表头。识别失败时会提示检查文件内容或编码。支持制表符、逗号、分号和连续空白分隔；连续空白分隔时列名不能含空格。数据行需要与表头列数一致。选作 X 的列不能有空值或 NaN；Y 列允许少量 NaN，但至少需要两个有效数值。
 
-## 无窗口配置运行
+## 无窗口运行
 
-完整示例见 [device_workflow_example.json](config/device_workflow_example.json)：
+[group_config_example.json](config/group_config_example.json) 展示两个分组，一个分图，一个叠加：
 
 ~~~powershell
-.\.venv\Scripts\python.exe .\app\device_workflow.py --config .\config\device_workflow_example.json --check-only
-.\.venv\Scripts\python.exe .\app\device_workflow.py --config .\config\device_workflow_example.json --overwrite
+.\.venv\Scripts\python.exe .\app\group_workflow.py --config .\config\group_config_example.json --check-only
+.\.venv\Scripts\python.exe .\app\group_workflow.py --config .\config\group_config_example.json --overwrite
 ~~~
 
-配置中的 `spectrum_files` 和 `electrical_files` 每项可填写 `path`、`device`、`plot_group`。同一 `plot_group` 叠加，不同 `plot_group` 分图。`spectrum_plot` 和 `electrical_plot` 分别保存两类数据的选列。
+配置中的相对路径以配置文件所在目录为准。`--check-only` 只检查文件与选列，不启动 Origin。已有目标文件时，命令行默认拒绝覆盖；明确需要覆盖时加 `--overwrite`。
 
-旧的单类流程仍可使用：[plot_config.json](config/plot_config.json)、[plot_dual_y_origin.py](app/plot_dual_y_origin.py)。
+## 示例与旧流程
 
-## 示例文件
+- `examples/sample_spectrum_device_a.txt` 和 `b.txt`：光谱示例。
+- `examples/sample_spectrum_device_a-Electrical.txt` 和 `b-Electrical.txt`：有空白表头前行、不同数据长度及 NaN 的示例。
+- 旧的单类选列窗口可运行 [origin_plot_gui.py](app/origin_plot_gui.py)；对应配置见 [plot_config.json](config/plot_config.json)。
 
-- `examples/sample_spectrum_device_a.txt` / `b.txt`：带前置测量信息的光谱文件。
-- `examples/sample_spectrum_device_a-Electrical.txt` / `b-Electrical.txt`：表头前有空行的电学文件，包含 `NaN` 示例。
-- [device_workflow_example.json](config/device_workflow_example.json)：完整光谱+电学工程配置。
-
-## 限制
-
-选作绘图的 X、Y 列必须是数字；各数据行需要与表头列数一致。Excel 文件请先另存为 CSV 或 TXT。生成工程需要本机 Origin 自动化服务可启动并有有效授权。
+项目依赖见 [requirements.txt](requirements.txt)。Excel 文件请先另存为 CSV 或 TXT。Origin 自动化服务需要在本机可启动并有有效授权。
